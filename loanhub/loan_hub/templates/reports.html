@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+/* ====== PAGE LAYOUT ====== */
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    height: 100%;
+}
+
+.main-wrapper {
+    display: flex;
+    height: 100vh;              /* ✅ full viewport */
+    overflow: hidden;           /* ✅ prevent body cut */
+}
+
+/* MAIN CONTENT SCROLL */
+.content {
+    flex: 1;
+    padding: 24px;
+    background: #f7f9fc;
+    box-sizing: border-box;
+
+    overflow-y: auto;           /* ✅ page scroll */
+    padding-bottom: 80px;       /* ✅ footer safety */
+}
+
+/* ====== HEADER ====== */
+.reports-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+}
+
+.reports-header h1 {
+    font-size:22px;
+    margin:0;
+}
+
+/* ====== GRID ====== */
+.cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ====== CARD ====== */
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 6px 18px rgba(10,10,10,0.06);
+}
+
+/* CARD HEADER */
+.card-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:10px;
+}
+
+.card-title h3 {
+    margin:0;
+    font-size:18px;
+}
+
+.card-title p {
+    margin:4px 0 0 0;
+    color:#555;
+    font-size:13px;
+}
+
+.search-box {
+    width: 220px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+}
+
+/* ====== TABLE ====== */
+.table-wrap {
+    max-height: 260px;          /* ✅ exactly ~6 rows */
+    overflow-y: auto;
+    border-radius: 8px;
+}
+
+/* scrollbar */
+.table-wrap::-webkit-scrollbar {
+    width: 6px;
+}
+.table-wrap::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 6px;
+}
+
+/* TABLE */
+.report-table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+}
+
+.report-table th,
+.report-table td {
+    padding:10px 8px;
+    border:1px solid #eee;
+    text-align:center;
+    white-space:nowrap;
+}
+
+/* sticky header */
+.report-table thead th {
+    position: sticky;
+    top: 0;
+    background: #ffffff;
+    z-index: 5;
+}
+
+.no-rows {
+    padding:12px;
+    color:#666;
+    text-align:center;
+}
+</style>
+
+<div class="main-wrapper">
+<div class="content">
+
+<div class="reports-header">
+    <h1>📊 Reports Dashboard</h1>
+</div>
+
+<div class="cards-grid">
+
+<!-- ================= LOANS ================= -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <h3>💰 All Loans</h3>
+            <p>Showing: {{ LOAN_TYPES|join:", " }}</p>
+        </div>
+        <input type="text" class="search-box"
+               placeholder="Search loans..."
+               id="loanSearch"
+               onkeyup="filterTable('loanSearch','loanTable')">
+    </div>
+
+    <div class="table-wrap">
+    {% if loans %}
+    <table class="report-table" id="loanTable">
+        <thead>
+            <tr>
+                <th>Gen No</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Ref</th>
+                <th>Balance</th>
+                <th>Interest</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in loans %}
+            <tr>
+                <td>{{ row.gen_no }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.type }}</td>
+                <td>{{ row.ref }}</td>
+                <td>{{ row.balance }}</td>
+                <td>{{ row.interest }}</td>
+                <td>{{ row.created_at|date:"d-m-Y" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="no-rows">No loan records found.</div>
+    {% endif %}
+    </div>
+</div>
+
+<!-- ================= DEPOSITS ================= -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <h3>🏦 All Deposits</h3>
+            <p>Showing: {{ DEPOSIT_TYPES|join:", " }}</p>
+        </div>
+        <input type="text" class="search-box"
+               placeholder="Search deposits..."
+               id="depositSearch"
+               onkeyup="filterTable('depositSearch','depositTable')">
+    </div>
+
+    <div class="table-wrap">
+    {% if deposits %}
+    <table class="report-table" id="depositTable">
+        <thead>
+            <tr>
+                <th>Gen No</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Ref</th>
+                <th>Balance</th>
+                <th>Interest</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in deposits %}
+            <tr>
+                <td>{{ row.gen_no }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.type }}</td>
+                <td>{{ row.ref }}</td>
+                <td>{{ row.balance }}</td>
+                <td>{{ row.interest }}</td>
+                <td>{{ row.created_at|date:"d-m-Y" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="no-rows">No deposit records found.</div>
+    {% endif %}
+    </div>
+</div>
+
+<!-- ================= OTHERS ================= -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <h3>📂 Other Collections</h3>
+            <p>Showing: {{ OTHER_TYPES|join:", " }}</p>
+        </div>
+        <input type="text" class="search-box"
+               placeholder="Search others..."
+               id="otherSearch"
+               onkeyup="filterTable('otherSearch','otherTable')">
+    </div>
+
+    <div class="table-wrap">
+    {% if others %}
+    <table class="report-table" id="otherTable">
+        <thead>
+            <tr>
+                <th>Gen No</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Ref</th>
+                <th>Amount</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in others %}
+            <tr>
+                <td>{{ row.gen_no }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.type_of_loan }}</td>
+                <td>{{ row.ref }}</td>
+                <td>{{ row.amount }}</td>
+                <td>{{ row.created_at|date:"d-m-Y" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="no-rows">No other records found.</div>
+    {% endif %}
+    </div>
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+function filterTable(inputId, tableId) {
+    const input = document.getElementById(inputId);
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById(tableId);
+    const rows = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < rows.length; i++) {
+        rows[i].style.display =
+            rows[i].innerText.toLowerCase().includes(filter)
+            ? "" : "none";
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; }
+
+.main-wrapper { display: flex; flex-direction: column; height: 100vh; padding: 12px; background: #f3f6fa; }
+
+.top-controls { margin-bottom: 12px; }
+.top-buttons, .search-bar, .date-download {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 8px;
+}
+
+.date-download {
+    align-items: center;
+    background: #e9eef5;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+}
+
+input[type=date], input[type=text] {
+    padding: 7px;
+    border-radius: 5px;
+    border: 1px solid #bfc7d3;
+}
+
+.table-scroll {
+    flex: 1;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid #cfd4dc;
+    background: white;
+}
+
+.report-table {
+    width: max-content;
+    min-width: 1200px;
+    border-collapse: collapse;
+}
+
+.report-table thead th {
+    background: #34495e;
+    color: yellow;
+    padding: 10px;
+    position: sticky;
+    top: 0;
+}
+
+.report-table tbody td {
+    padding: 9px;
+    border-bottom: 1px solid #ececec;
+    text-align: center;
+}
+
+.report-table tr:hover { background:#f8fbff; }
+
+.view-btn {
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid #34495e;
+    color: #34495e;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.view-btn.active {
+    background: #34495e;
+    color:white !important;
+}
+
+.view-btn-row {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #2a9d8f;
+    background: #e0f7f5;
+    cursor: pointer;
+}
+.view-btn-row:hover { background: #b2ebe6; }
+
+.row-download-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #34495e;
+    background: #f0f0f0;
+    cursor: pointer;
+}
+.row-download-btn:hover { background:#d9d9d9; }
+
+#downloadBtn {
+    background: #34495e;
+    color: white;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+#downloadBtn:hover { background: #2c3e50; }
+
+#clearFiltersBtn {
+    background: #e63946;
+    color:#fff;
+    padding: 7px 14px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+}
+
+/* ================= MODAL ================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: white;
+    width: 85%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 20px;
+    animation: fadeIn 0.25s ease;
+    position: relative;
+}
+
+.modal-content h3 {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: #e63946;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.modal-table th {
+    background: #34495e;
+    color: white;
+    padding: 8px;
+}
+
+.modal-table td {
+    padding: 7px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+
+.section-title {
+    margin-top: 25px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+@keyframes fadeIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+</style>
+
+<div class="main-wrapper">
+    <h2 style="text-align:center;">📋 {{ report_type }} Report</h2>
+
+    <div class="top-controls">
+        <div class="top-buttons">
+            <a href="?type={{ report_type }}&view=all" class="view-btn {% if view_mode == 'all' %}active{% endif %}">View Reports</a>
+            <a href="?type={{ report_type }}&view=payments" class="view-btn {% if view_mode == 'payments' %}active{% endif %}">Payments</a>
+            <a href="?type={{ report_type }}&view=receipts" class="view-btn {% if view_mode == 'receipts' %}active{% endif %}">Receipts</a>
+        </div>
+
+        <div class="search-bar">
+            <input id="searchInput" type="text" placeholder="Search..." style="width:260px;">
+        </div>
+
+        <div class="date-download">
+            <div><label>From</label> <input id="fromDate" type="date"></div>
+            <div><label>To</label> <input id="toDate" type="date"></div>
+            <button id="clearFiltersBtn">Clear</button>
+            <button id="downloadBtn">⬇ Download Excel</button>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table id="reportTable" class="report-table">
+            <thead>
+                <tr>
+                    <th>Gen No</th>
+                    <th>Name</th>
+                    <th>Ref</th>
+                    {% if view_mode == 'all' %}
+                        <th>Balance</th>
+                        {% if is_loan_or_deposit %}
+                            <th>Interest</th>
+                            <th>Created At</th>
+                        {% endif %}
+                    {% else %}
+                        <th>Cash</th>
+                        <th>Bank 1</th>
+                        <th>Bank 2</th>
+                        <th>Adjustment</th>
+                        <th>Created At</th>
+                    {% endif %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.gen_no }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.ref }}</td>
+
+                    {% if view_mode == 'all' %}
+                        <td>{{ row.balance }}</td>
+                        {% if is_loan_or_deposit %}
+                            <td>{{ row.interest }}</td>
+                            <td>{{ row.created_at }}</td>
+                        {% endif %}
+                    {% else %}
+                        <td>{{ row.cash }}</td>
+                        <td>{{ row.bank1 }}</td>
+                        <td>{{ row.bank2 }}</td>
+                        <td>{{ row.adjustment }}</td>
+                        <td>{{ row.created_at }}</td>
+                    {% endif %}
+
+                    <td>
+                        <div style="display:flex; gap:6px; justify-content:center;">
+                            <button class="view-btn-row"
+        data-loan-id="{{ row.loan_id }}">
+    👁
+</button>
+                            <button class="row-download-btn"
+        data-loan-id="{{ row.loan_id }}">
+    ⬇
+</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= MODAL ================= -->
+<!-- ================= MODAL ================= -->
+
+<div class="modal-overlay" id="transactionModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">X</button>
+        <h3>Loan Transactions</h3>
+
+        <!-- ================= PAYMENTS ================= -->
+        <div class="section-title">Payments</div>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Principal</th>
+                    <th>Interest</th>
+                    <th>Total</th>
+               
+                    <th>Cash</th>
+                    <th>Bank1</th>
+                    <th>Bank2</th>
+                    <th>Adjustment</th>
+                    
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody id="modalPayments">
+                <tr>
+                    <td colspan="11">No data (Backend not connected yet)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- ================= RECEIPTS ================= -->
+        <div class="section-title">Receipts (LoanRepayment)</div>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                  
+                    <th>Type of Loan</th>
+                    <th>Total Payment</th>
+                    <th>Paid to Interest</th>
+                    <th>Paid to Principal</th>
+                   
+                    <th>Cash</th>
+                    <th>Bank1</th>
+                    <th>Bank2</th>
+                    <th>Adjustment</th>
+            
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody id="modalReceipts">
+                <tr>
+                    <td colspan="13">No data (Backend not connected yet)</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+<script>
+document.querySelectorAll(".view-btn-row").forEach(btn => {
+
+    btn.addEventListener("click", function () {
+
+        const loanId = this.dataset.loanId;
+
+        if (!loanId || loanId === "None" || loanId === "") {
+            alert("Invalid Loan ID");
+            return;
+        }
+
+        const paymentsBody = document.getElementById("modalPayments");
+        const receiptsBody = document.getElementById("modalReceipts");
+
+        // Show loading state
+        paymentsBody.innerHTML = `<tr><td colspan="11">Loading...</td></tr>`;
+        receiptsBody.innerHTML = `<tr><td colspan="13">Loading...</td></tr>`;
+
+        fetch(`/loan-transactions/${loanId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Server error");
+                }
+                return response.json();
+            })
+            .then(data => {
+
+                paymentsBody.innerHTML = "";
+                receiptsBody.innerHTML = "";
+
+                // ================= PAYMENTS =================
+                if (!data.payments || data.payments.length === 0) {
+                    paymentsBody.innerHTML =
+                        `<tr><td colspan="11">No Payments Found</td></tr>`;
+                } else {
+                    data.payments.forEach(p => {
+                        paymentsBody.innerHTML += `
+                            <tr>
+                                <td>${p.code || ""}</td>
+                                <td>${p.principal || 0}</td>
+                                <td>${p.interest || 0}</td>
+                                <td>${p.total || 0}</td>
+                         
+                                <td>${p.cash || 0}</td>
+                                <td>${p.bank1 || 0}</td>
+                                <td>${p.bank2 || 0}</td>
+                                <td>${p.adjustment || 0}</td>
+                                
+                                <td>${p.created_at || ""}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                // ================= RECEIPTS =================
+                if (!data.receipts || data.receipts.length === 0) {
+                    receiptsBody.innerHTML =
+                        `<tr><td colspan="13">No Receipts Found</td></tr>`;
+                } else {
+                    data.receipts.forEach(r => {
+                        receiptsBody.innerHTML += `
+                            <tr>
+                                <td>${r.code || ""}</td>
+                                
+                                <td>${r.type_of_loan || ""}</td>
+                                <td>${r.total_payment || 0}</td>
+                                <td>${r.paid_to_interest || 0}</td>
+                                <td>${r.paid_to_principal || 0}</td>
+                             
+                                <td>${r.cash || 0}</td>
+                                <td>${r.bank1 || 0}</td>
+                                <td>${r.bank2 || 0}</td>
+                                <td>${r.adjustment || 0}</td>
+                               
+                                <td>${r.created_at || ""}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                // Show modal
+                document.getElementById("transactionModal").style.display = "flex";
+
+            })
+            .catch(error => {
+                paymentsBody.innerHTML =
+                    `<tr><td colspan="11">Error loading payments</td></tr>`;
+                receiptsBody.innerHTML =
+                    `<tr><td colspan="13">Error loading receipts</td></tr>`;
+                console.error(error);
+            });
+
+    });
+
+});
+
+function closeModal() {
+    document.getElementById("transactionModal").style.display = "none";
+}
+
+document.getElementById("transactionModal").addEventListener("click", function (e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+document.querySelectorAll(".row-download-btn").forEach(btn => {
+
+    btn.addEventListener("click", function () {
+
+        const loanId = this.dataset.loanId;
+
+        if (!loanId || loanId === "None" || loanId === "") {
+            alert("Invalid Loan ID");
+            return;
+        }
+
+        fetch(`/loan-transactions/${loanId}/`)
+            .then(response => response.json())
+            .then(data => {
+
+                let csvContent = "";
+
+                // ===== PAYMENTS =====
+                csvContent += "PAYMENTS\n";
+
+                if (data.payments && data.payments.length > 0) {
+
+                    // Header
+                    csvContent +=
+                        "Code,Principal,Interest,Total,Payment Mode,Cash,Bank1,Bank2,Adjustment,Remarks,Created At\n";
+
+                    data.payments.forEach(p => {
+                        csvContent +=
+                            `"${p.code || ""}",` +
+                            `"${p.principal || 0}",` +
+                            `"${p.interest || 0}",` +
+                            `"${p.total || 0}",` +
+                            `"${p.payment_mode || ""}",` +
+                            `"${p.cash || 0}",` +
+                            `"${p.bank1 || 0}",` +
+                            `"${p.bank2 || 0}",` +
+                            `"${p.adjustment || 0}",` +
+                            `"${p.remarks || ""}",` +
+                            `"${p.created_at || ""}"\n`;
+                    });
+
+                } else {
+                    csvContent += "No Payments Found\n";
+                }
+
+                csvContent += "\n\n";
+
+                // ===== RECEIPTS =====
+                csvContent += "RECEIPTS\n";
+
+                if (data.receipts && data.receipts.length > 0) {
+
+                    csvContent +=
+                        "Code,Loan,Type of Loan,Total Payment,Paid to Interest,Paid to Principal,Payment Mode,Cash,Bank1,Bank2,Adjustment,Remarks,Created At\n";
+
+                    data.receipts.forEach(r => {
+                        csvContent +=
+                            `"${r.code || ""}",` +
+                            `"${r.loan_id || ""}",` +
+                            `"${r.type_of_loan || ""}",` +
+                            `"${r.total_payment || 0}",` +
+                            `"${r.paid_to_interest || 0}",` +
+                            `"${r.paid_to_principal || 0}",` +
+                            `"${r.payment_mode || ""}",` +
+                            `"${r.cash || 0}",` +
+                            `"${r.bank1 || 0}",` +
+                            `"${r.bank2 || 0}",` +
+                            `"${r.adjustment || 0}",` +
+                            `"${r.remarks || ""}",` +
+                            `"${r.created_at || ""}"\n`;
+                    });
+
+                } else {
+                    csvContent += "No Receipts Found\n";
+                }
+
+                // Download
+                let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                let url = URL.createObjectURL(blob);
+
+                let link = document.createElement("a");
+                link.href = url;
+                link.download = `Loan_${loanId}_Full_Report.csv`;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(error => {
+                alert("Error downloading report");
+                console.error(error);
+            });
+
+    });
+
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Add User</h2>
+
+    <form class="center-form" method="post" action="{% url 'adduser' %}" id="add-user-form">
+        {% csrf_token %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Name (Required) -->
+        <div class="form-group">
+            <input type="text" name="name" placeholder="Name" class="input-box" id="name" required>
+            <span class="error-message" id="name-error">Name is required</span>
+        </div>
+
+        <!-- Mobile (Optional) -->
+        <div class="form-group">
+            <input type="tel" name="Mobile" placeholder="Mobile No." class="input-box" id="mobile" pattern="[0-9]{10}">
+            <span class="error-message" id="mobile-error">Valid 10-digit mobile number is required</span>
+        </div>
+
+        <!-- Gen No (Optional) -->
+        <div class="form-group">
+            <input type="text" name="code" placeholder="Gen No (optional)" class="input-box">
+        </div>
+
+        <!-- Address (Optional) -->
+        <div class="form-group">
+            <textarea name="Address" placeholder="Address" class="input-box textarea-box"></textarea>
+        </div>
+
+        <button type="submit" class="submit-button">Submit</button>
+    </form>
+</div>
+
+<style>
+/* ---------- Form Container ---------- */
+.content {
+    max-width: 420px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 25px 30px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* ---------- Heading ---------- */
+.content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+/* ---------- Form Groups ---------- */
+.form-group {
+    margin-bottom: 15px;
+}
+
+/* ---------- Inputs ---------- */
+.input-box {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    outline: none;
+}
+
+.input-box:focus {
+    border-color: #2563eb;
+}
+
+/* ---------- Textarea ---------- */
+.textarea-box {
+    resize: vertical;
+    min-height: 70px;
+}
+
+/* ---------- Submit Button ---------- */
+.submit-button {
+    width: 100%;
+    padding: 10px 0;
+    background-color: #2563eb;
+    color: white;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background-color: #1e40af;
+}
+
+/* ---------- Alerts ---------- */
+.alert {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.alert-success { background: #e6f4ea; color: #1e4620; }
+.alert-error,
+.alert-danger { background: #fdecea; color: #611a15; }
+
+/* ---------- Error message ---------- */
+.error-message {
+    color: #dc2626;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: none;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 480px) {
+    .content {
+        margin: 20px;
+        padding: 20px;
+    }
+}
+
+</style>
+
+<script>
+// Client-side validation (unchanged)
+document.getElementById('add-user-form').addEventListener('submit', function(e) {
+    let valid = true;
+    const name = document.getElementById('name');
+
+    document.getElementById('name-error').style.display = 'none';
+
+    if (!name.value.trim()) {
+        document.getElementById('name-error').style.display = 'block';
+        valid = false;
+    }
+
+    if (!valid) {
+        e.preventDefault();
+    }
+});
+</script>
+
+{% endblock %}

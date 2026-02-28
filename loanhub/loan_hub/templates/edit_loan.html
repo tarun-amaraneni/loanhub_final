@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+/* ===========================
+   EDIT LOAN – IMPROVED UI
+   =========================== */
+
+body {
+    background: #f4f6f9;
+}
+
+/* Center container */
+.page-wrapper {
+    min-height: 85vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Card */
+.form-card {
+    background: #ffffff;
+    padding: 28px 32px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    width: 480px;
+}
+
+/* Heading */
+h3 {
+    text-align: center;
+    margin-bottom: 22px;
+    color: #2c3e50;
+}
+
+/* Table layout */
+.styled-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+}
+
+.styled-table th {
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    padding-bottom: 4px;
+}
+
+.styled-table td {
+    width: 100%;
+}
+
+/* Inputs */
+.editable {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #cfd8dc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.editable:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33,150,243,0.15);
+}
+
+.editable[readonly] {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+/* Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+}
+
+.save-btn,
+.view-btn,
+.delete-btn {
+    padding: 9px 18px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Update */
+.save-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+.save-btn:hover {
+    background-color: #43a047;
+}
+
+/* Cancel */
+.view-btn {
+    background-color: #2196F3;
+    color: white;
+}
+.view-btn:hover {
+    background-color: #1e88e5;
+}
+
+/* Delete */
+.delete-btn {
+    background-color: #e53935;
+    color: white;
+}
+.delete-btn:hover {
+    background-color: #c62828;
+}
+</style>
+
+<div class="page-wrapper">
+    <div class="form-card">
+
+        <h3>EDIT LOAN ✏️</h3>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <table class="styled-table">
+                <tr>
+                    <th>Loan Type</th>
+                    <td>
+                        <input class="editable"
+                               value="{{ loan.type_of_loan }}"
+                               readonly>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Issue Amount</th>
+                    <td>
+                        <input class="editable"
+                               name="amount"
+                               value="{{ loan.amount }}">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Interest</th>
+                    <td>
+                        <input class="editable"
+                               name="interest"
+                               value="{{ loan.interest }}">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Cash</th>
+                    <td>
+                        <input class="editable"
+                               name="cash"
+                               value="{{ loan.cash }}">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Bank1</th>
+                    <td>
+                        <input class="editable"
+                               name="bank1"
+                               value="{{ loan.bank1 }}">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Bank2</th>
+                    <td>
+                        <input class="editable"
+                               name="bank2"
+                               value="{{ loan.bank2 }}">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Adj</th>
+                    <td>
+                        <input class="editable"
+                               name="adj"
+                               value="{{ loan.adj }}">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Issue Date</th>
+                    <td>
+                        <input class="editable"
+                               type="date"
+                               name="date"
+                               value="{{ loan.created_at|date:'Y-m-d' }}">
+                    </td>
+                </tr>
+            </table>
+
+            <div class="action-buttons">
+                <button type="submit" class="save-btn">Update</button>
+
+                <a href="{% url 'loans' %}">
+                    <button type="button" class="view-btn">Cancel</button>
+                </a>
+
+                <button type="button"
+                        class="delete-btn"
+                        onclick="deleteLoan({{ loan.id }})">
+                    Delete
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+function deleteLoan(loanId) {
+    if (!confirm("This will permanently delete the loan and all related records. Continue?")) {
+        return;
+    }
+
+    fetch("{% url 'delete_loan' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "loan_id=" + loanId
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Loan deleted successfully");
+            window.location.href = "{% url 'loans' %}";
+        } else {
+            alert(data.message || "Delete failed");
+        }
+    });
+}
+</script>
+
+{% endblock %}

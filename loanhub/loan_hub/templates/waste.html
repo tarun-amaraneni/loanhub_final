@@ -1,0 +1,2135 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ===== ERROR & ALERT ===== */
+.error-message { color: red; display: none; }
+
+
+/* Left-align table headings only */
+.table-heading {
+    text-align: left;
+    margin-left: 20px; /* optional padding from left */
+}
+
+/* ===== UNIFIED DROPDOWN STYLE (Loans + Receipts + Payments) ===== */
+.select-ui {
+    width: 100% !important;
+    height: 30px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background-color: #fff;
+    font-size: 13px;
+}
+
+/* Select2 container */
+.select2-container {
+    width: 100% !important;
+}
+
+/* Select2 selection box */
+.select2-container--default .select2-selection--single {
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    display: flex;
+    align-items: center;
+}
+
+/* Selected text */
+.select2-container--default .select2-selection--single
+.select2-selection__rendered {
+    line-height: 28px;
+    font-size: 13px;
+    padding-left: 8px;
+}
+
+/* Arrow */
+.select2-container--default .select2-selection--single
+.select2-selection__arrow {
+    height: 28px;
+}
+
+/* Focus effect */
+.select2-container--default.select2-container--focus
+.select2-selection--single {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+}
+
+
+.alert {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px 40px;
+    border-radius: 10px;
+    color: #fff;
+    opacity: 0.95;
+    z-index: 1000;
+    font-size: 18px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.alert-success { background-color: #28A745; }
+.alert-danger { background-color: #ff0019; }
+.alert-warning { background-color: yellow; color: #212529; font-size:16px; padding:10px; border-radius:5px; }
+
+/* ===== GEN NO SEARCH DROPDOWN ===== */
+#code_suggestions {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: absolute;
+    z-index: 1000;
+    margin-top: 5px;
+    width: 200px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+#code_suggestions option { padding: 8px 10px; cursor: pointer; }
+#code_suggestions option:hover { background-color: #f0f0f0; color: #333; }
+#code_suggestions option:last-child { border-bottom: none; }
+
+/* ===== BUTTONS ===== */
+.save-btn, .view-btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 4px 2px;
+}
+.view-btn { background-color: #008CBA; }
+.save-btn:hover { background-color: #45A049; }
+.view-btn:hover { background-color: #007BB5; }
+.submit-button:hover { background-color: green; color: #fff; }
+
+/* ===== EDITABLE FIELDS ===== */
+.editable {
+    border: none;
+    background: none;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    font-size: 14px;
+    padding: 8px 10px;
+}
+.editable:focus { outline: none; border: 2px solid #4CAF50; }
+
+/* ===== TABLE CONTAINERS ===== */
+.table-container1, .table-container2 {
+    margin: 20px auto;
+    width: 95%;
+    overflow-x: auto;
+}
+
+/* ===== MAIN TABLE STYLING ===== */
+.styled-table {
+    width: 100%;
+    margin: auto;
+    border-collapse: collapse;
+    text-align: center;
+}
+.styled-table th, .styled-table td {
+    padding: 10px;
+    text-align: center;
+}
+.styled-table th {
+    background-color:#354A5E;
+    color: #fff;
+}
+.styled-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+
+/* ===== HISTORY TABLES ===== */
+#receiptsHistory, #paymentsHistory {
+    width: 95%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    text-align: center;
+}
+#receiptsHistory th, #receiptsHistory td,
+#paymentsHistory th, #paymentsHistory td {
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    vertical-align: middle;
+    text-align: center;
+}
+#receiptsHistory th, #paymentsHistory th {
+    background-color: #354A5E;
+    color: #fff;
+}
+#receiptsHistory tbody tr:nth-child(even),
+#paymentsHistory tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+#receiptsHistory tbody td, #paymentsHistory tbody td {
+    font-size: 14px;
+}
+
+/* ===== HEADINGS ===== */
+h3 {
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+/* ===== COMPACT TABLE ROW HEIGHT ===== */
+
+/* Header cells */
+.styled-table th,
+#receiptsHistory th,
+#paymentsHistory th {
+    padding: 6px 8px;          /* reduce vertical padding */
+    line-height: 1.2;
+    font-size: 13px;
+}
+
+/* Body cells */
+.styled-table td,
+#receiptsHistory td,
+#paymentsHistory td {
+    padding: 5px 8px;          /* 🔽 this controls row height */
+    line-height: 1.2;
+    font-size: 13px;
+}
+
+/* Inputs & selects inside table */
+.styled-table input,
+.styled-table select,
+.select2-container--default .select2-selection--single {
+    height: 30px;              /* reduce input height */
+    padding: 4px 6px;
+    font-size: 13px;
+}
+
+/* Select2 text alignment fix */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 28px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 28px;
+}
+
+
+
+/* Reduce space between date text and calendar icon */
+input[type="date"] {
+    padding-right: 6px;   /* default is usually 12–16px */
+}
+
+/* Chrome / Edge / Safari */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-left: 2px;     /* pulls icon closer */
+    padding: 0;
+}
+
+/* Optional: make icon slightly smaller */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    transform: scale(0.9);
+}
+input[type="date"] {
+    padding-right: 4px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-left: 0;
+}
+/* Remove underline from action links */
+a.view-btn {
+    text-decoration: none;
+    display: inline-block;
+}
+
+</style>
+
+
+<div class="content">
+
+    <!-- GEN NO FORM -->
+    <form class="center-form1" method="post" action="{% url 'others' %}">
+        {% csrf_token %}
+        <div>
+            <input type="text" id="gen_no_input" name="gen_no" placeholder="Gen.No." class="input-box1" autocomplete="off">
+            <select id="code_suggestions" class="input-box1" size="5" style="display:none;"></select>
+            <button type="submit" class="submit-button" disabled>Submit</button>
+        </div>
+        <br>
+        <input type="text" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+
+    <!-- RECEIPTS TABLE -->
+    <h3 class="table-heading">RECEIPTS 💰</h3>
+    <div class="table-container1">
+        <form id="receiptForm" method="post">
+            {% csrf_token %}
+            <table class="styled-table">
+            <thead>
+                <tr>
+                    <th >Issue Date</th> <!-- new column -->
+                    <th style="color: yellow;">Receipt Type</th>
+                    <th style="color: yellow;">Amount</th>
+                    <th style="color: yellow;">Cash</th>
+                    <th style="color: yellow;">Bank1</th>
+                    <th style="color: yellow;">Bank2</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="date" name="date" class="editable"></td> <!-- new field -->
+                    <td>
+                        <select name="type_of_loan" class="editable">
+                            <option value="">Select Receipt</option>
+                            <option value="ADMISSION FEES">Admission Fees</option>
+                            <option value="OTHER RECEIPTS">Other Receipts</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="amount" class="editable" placeholder="Amount"></td>
+                    <td><input type="text" name="cash" class="editable" placeholder="Cash"></td>
+                    <td><input type="text" name="bank1" class="editable" placeholder="Bank1"></td>
+                    <td><input type="text" name="bank2" class="editable" placeholder="Bank2"></td>
+                    <td><button type="button" class="save-btn" id="addReceipt">Submit</button></td>
+                </tr>
+            </tbody>
+
+            </table>
+        </form>
+    </div>
+
+    <!-- PAYMENTS TABLE -->
+    <h3 class="table-heading">PAYMENTS 💸</h3>
+    <div class="table-container2">
+        <form id="paymentForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="gen_no" value="{{ gen_no }}">
+            <table class="styled-table">
+                <thead>
+    <tr>
+        <th >Issue Date</th> <!-- new column -->
+        <th style="color: yellow;">Loan Type</th>
+        <th style="color: yellow;">Amount</th>
+        <th style="color: yellow;">Cash</th>
+        <th style="color: yellow;">Bank1</th>
+        <th style="color: yellow;">Bank2</th>
+        <th>Actions</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <td><input type="date" name="date" class="editable"></td> <!-- new field -->
+        <td>
+            <select name="type_of_loan" class="editable">
+                <option value="">Select Payment</option>
+                <option value="SALARY PAID">Salary Paid</option>
+                <option value="OFFICE EXPENSES">Office Expenses</option>
+                <option value="OTHER PAYMENTS">Other Payments</option>
+            </select>
+        </td>
+        <td><input type="text" name="amount" class="editable" placeholder="Amount"></td>
+        <td><input type="text" name="cash" class="editable" placeholder="Cash"></td>
+        <td><input type="text" name="bank1" class="editable" placeholder="Bank1"></td>
+        <td><input type="text" name="bank2" class="editable" placeholder="Bank2"></td>
+        <td><button type="button" class="save-btn" id="addPayment">Submit</button></td>
+    </tr>
+</tbody>
+
+            </table>
+        </form>
+    </div>
+    <h3 class="table-heading">RECEIPTS HISTORY 📄</h3>
+<table class="styled-table" id="receiptsHistory">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Ref</th>
+            <th>Type</th>
+            <th>Cash</th>
+            <th>Bank1</th>
+            <th>Bank2</th>
+            <th>Total</th>
+            <th>Edit</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h3 class="table-heading">PAYMENTS HISTORY 📄</h3>
+<table class="styled-table" id="paymentsHistory">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Ref</th>
+            <th>Type</th>
+            <th>Cash</th>
+            <th>Bank1</th>
+            <th>Bank2</th>
+            <th>Total</th>
+            <th>Edit</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function () {
+
+
+    // ---------- DEFAULT DATE = TODAY ----------
+const today = new Date().toISOString().split('T')[0];
+
+$('input[type="date"]').each(function () {
+    if (!$(this).val()) {
+        $(this).val(today);
+    }
+});
+
+    // ---------------- GEN NO AUTOLOAD + SEARCH ----------------
+// ---------------- GEN NO AUTOLOAD + SEARCH ----------------
+let autoGenNo = "{{ gen_no|default:'' }}" || new URLSearchParams(window.location.search).get('gen_no');
+
+if (autoGenNo) {
+    $('#gen_no_input').val(autoGenNo).prop('readonly', true);
+    $('#code_suggestions').hide();
+    $('.submit-button').prop('disabled', false);
+    loadExistingRecords(autoGenNo);
+}
+
+// 🔹 COMMON FUNCTION TO FETCH USERS
+function fetchGenNos(query = '') {
+    $.ajax({
+        url: '{% url "search_user_codes" %}',
+        data: { term: query },
+        dataType: 'json',
+        success: function (data) {
+            const dropdown = $('#code_suggestions');
+            dropdown.empty();
+
+            if (data.length) {
+                data.forEach(user => {
+                    dropdown.append(
+                        `<option value="${user.code}">
+                            ${user.code} - [${user.name}]
+                        </option>`
+                    );
+                });
+                dropdown.show();
+            } else {
+                dropdown.hide();
+            }
+        },
+        error: function () {
+            showAlert('Search failed', 'danger');
+        }
+    });
+}
+
+// 🔹 SHOW LIST ON CLICK / FOCUS
+$('#gen_no_input').on('focus click', function () {
+    if ($(this).prop('readonly')) return;
+    fetchGenNos();   // load all initially
+});
+
+// 🔹 FILTER WHILE TYPING
+$('#gen_no_input').on('keyup', function () {
+    if ($(this).prop('readonly')) return;
+    const query = $(this).val();
+    fetchGenNos(query);
+});
+
+// 🔹 SELECT FROM DROPDOWN
+$('#code_suggestions').on('click', 'option', function () {
+    const selectedGenNo = $(this).val();
+    $('#gen_no_input').val(selectedGenNo).prop('readonly', true);
+    $('#code_suggestions').hide();
+    $('.submit-button').prop('disabled', false);
+    loadExistingRecords(selectedGenNo);
+});
+
+// 🔹 HIDE DROPDOWN WHEN CLICKING OUTSIDE
+$(document).on('click', function (e) {
+    if (!$(e.target).closest('#gen_no_input, #code_suggestions').length) {
+        $('#code_suggestions').hide();
+    }
+});
+
+// Receipts dropdown (search + new option)
+$('#receiptForm select[name="type_of_loan"]').select2({
+    placeholder: "Select or type Receipt Type",
+    tags: true,          // allows new options
+    allowClear: true,
+    width: '100%',
+    createTag: function(params) {
+        return {
+            id: params.term,
+            text: params.term,
+            newOption: true
+        }
+    }
+}).on('select2:select', function(e) {
+    const data = e.params.data;
+    if (data.newOption) {
+        // the new value typed is now selected
+        $(this).val(data.id).trigger('change');
+    }
+});
+
+// Payments dropdown (search + new option)
+$('#paymentForm select[name="type_of_loan"]').select2({
+    placeholder: "Select or type Payment Type",
+    tags: true,
+    allowClear: true,
+    width: '100%',
+    createTag: function(params) {
+        return {
+            id: params.term,
+            text: params.term,
+            newOption: true
+        }
+    }
+}).on('select2:select', function(e) {
+    const data = e.params.data;
+    if (data.newOption) {
+        $(this).val(data.id).trigger('change');
+    }
+});
+
+
+
+    // ---------------- ALERT FUNCTION ----------------
+    function showAlert(message, type) {
+        const alert = $(`<div class="alert alert-${type}">${message}</div>`);
+        $('body').append(alert);
+        setTimeout(() => alert.fadeOut(400, () => alert.remove()), 3000);
+    }
+
+    // ---------------- HELPER ----------------
+    function getGenNo() {
+        return $('#gen_no_input').val().trim();
+    }
+    function parseInput(input) {
+        let val = parseFloat(input.val());
+        return isNaN(val) ? 0 : val;
+    }
+
+    // ---------------- SAVE RECEIPT ----------------
+    $('#addReceipt').click(function() {
+        const gen_no = getGenNo();
+        if (!gen_no) { showAlert('Please select Gen No', 'warning'); return; }
+
+        const row = $('#receiptForm tbody tr');
+        const date = row.find('input[name="date"]').val();  // <-- NEW
+        if (!date) { showAlert('Please select a date', 'warning'); return; }
+
+        const type_of_loan = row.find('select[name="type_of_loan"]').val();
+        if (!type_of_loan) { showAlert('Please select Receipt Type', 'warning'); return; }
+
+        const cash   = parseInput(row.find('input[name="cash"]'));
+        const bank1  = parseInput(row.find('input[name="bank1"]'));
+        const bank2  = parseInput(row.find('input[name="bank2"]'));
+        const amount = parseInput(row.find('input[name="amount"]'));
+        const calculatedAmount = cash + bank1 + bank2;
+        if (amount !== calculatedAmount) { showAlert(`Amount should equal Cash + Bank1 + Bank2 (${calculatedAmount})`, 'warning'); return; }
+
+        $.ajax({
+            url: '{% url "others" %}',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'gen_no': gen_no,
+                'date': date,          // <-- send date
+                'type_of_loan': type_of_loan,
+                'transaction_type': 'RECEIPT',
+                'cash': cash,
+                'bank1': bank1,
+                'bank2': bank2
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    showAlert('Receipt added successfully!', 'success');
+                    row.find('input, select').val('');
+                    loadExistingRecords(gen_no);
+                } else {
+                    showAlert(res.message || 'Failed to save receipt', 'danger');
+                }
+            },
+            error: function() { showAlert('Server error while saving receipt', 'danger'); }
+        });
+    });
+
+    // ---------------- SAVE PAYMENT ----------------
+    $('#addPayment').click(function() {
+        const gen_no = getGenNo();
+        if (!gen_no) { showAlert('Please select Gen No', 'warning'); return; }
+
+        const row = $('#paymentForm tbody tr');
+        const date = row.find('input[name="date"]').val();  // <-- NEW
+        if (!date) { showAlert('Please select a date', 'warning'); return; }
+
+        const type_of_loan = row.find('select[name="type_of_loan"]').val();
+        if (!type_of_loan) { showAlert('Please select Payment Type', 'warning'); return; }
+
+        const cash   = parseInput(row.find('input[name="cash"]'));
+        const bank1  = parseInput(row.find('input[name="bank1"]'));
+        const bank2  = parseInput(row.find('input[name="bank2"]'));
+        const amount = parseInput(row.find('input[name="amount"]'));
+        const calculatedAmount = cash + bank1 + bank2;
+        if (amount !== calculatedAmount) { showAlert(`Amount should equal Cash + Bank1 + Bank2 (${calculatedAmount})`, 'warning'); return; }
+
+        $.ajax({
+            url: '{% url "others" %}',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'gen_no': gen_no,
+                'date': date,          // <-- send date
+                'type_of_loan': type_of_loan,
+                'transaction_type': 'PAYMENT',
+                'cash': cash,
+                'bank1': bank1,
+                'bank2': bank2
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    showAlert('Payment added successfully!', 'success');
+                    row.find('input, select').val('');
+                    loadExistingRecords(gen_no);
+                } else {
+                    showAlert(res.message || 'Failed to save payment', 'danger');
+                }
+            },
+            error: function() { showAlert('Server error while saving payment', 'danger'); }
+        });
+    });
+
+    // ---------------- LOAD EXISTING RECORDS FUNCTION ----------------
+    function loadExistingRecords(gen_no) {
+        if (!gen_no) return;
+
+        // Receipts
+// Receipts
+$.get("{% url 'fetch_receipts' %}", { gen_no: gen_no }, function(res) {
+    const tbody = $("#receiptsHistory tbody");
+    tbody.empty();
+
+    if (res.status === 'success' && res.receipts.length) {
+        res.receipts.forEach(r => {
+            tbody.append(`<tr>
+                <td>${r.created_at}</td>   <!-- ✅ Date -->
+                <td>${r.code}</td>
+                <td>${r.type_of_loan}</td>
+                <td>${r.cash}</td>
+                <td>${r.bank1}</td>
+                <td>${r.bank2}</td>
+                <td>${r.amount}</td>
+                <td><a href="/other-cash/edit/${r.id}/" class="view-btn">Edit</a></td>
+            </tr>`);
+        });
+    } else {
+        tbody.append('<tr><td colspan="7">No receipts found</td></tr>');
+    }
+});
+
+// Payments
+$.get("{% url 'fetch_payments' %}", { gen_no: gen_no }, function(res) {
+    const tbody = $("#paymentsHistory tbody");
+    tbody.empty();
+
+    if (res.status === 'success' && res.payments.length) {
+        res.payments.forEach(p => {
+            tbody.append(`<tr>
+                <td>${p.created_at}</td>   <!-- ✅ Date -->
+                <td>${p.code}</td>
+                <td>${p.type_of_loan}</td>
+                <td>${p.cash}</td>
+                <td>${p.bank1}</td>
+                <td>${p.bank2}</td>
+                <td>${p.amount}</td>
+                <td><a href="/other-cash/edit/${p.id}/" class="view-btn">Edit</a></td>
+            </tr>`);
+        });
+    } else {
+        tbody.append('<tr><td colspan="7">No payments found</td></tr>');
+    }
+});
+
+
+    }
+
+});
+</script>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+today ---loans
+def loans_view(request):
+    loan_types = ['MTL LOAN', 'FDL LOAN', 'KVP/NSC LOAN']
+    loans = []
+    user_name = None
+    gen_no = None
+
+    if request.method == 'POST':
+        gen_no = request.POST.get('gen_no', '').strip()
+        loan_id = request.POST.get('loan_id')
+
+        # -----------------------------------------------------
+        # DISPLAY LOANS
+        # -----------------------------------------------------
+        if gen_no:
+            user = User.objects.filter(code=gen_no).first()
+            user_name = user.name if user else 'Unknown'
+
+            for loan_type in loan_types:
+                loan = Loan.objects.filter(
+                    gen_no=gen_no,
+                    type_of_loan=loan_type,
+                    loan_status='Active'
+                ).first()
+
+                if loan:
+                    repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                        total_paid_principal=Coalesce(Sum('paid_to_principal'), Value(0), output_field=DecimalField()),
+                        total_paid_interest=Coalesce(Sum('paid_to_interest'), Value(0), output_field=DecimalField())
+                    )
+
+                    total_paid_principal = Decimal(repayments['total_paid_principal'])
+                    total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                    remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+                    remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+
+                    # Auto close loan if cleared
+                    if remaining_principal <= 0 and remaining_interest <= 0:
+                        loan.loan_status = 'Closed'
+                        loan.save(update_fields=['loan_status'])
+                        continue
+
+                    loans.append({
+                        'loan_type': loan_type,
+                        'loan': loan,
+                        'balance': remaining_principal,
+                        'interest': remaining_interest,
+                        'loan_code': loan.code,
+                    })
+
+        # -----------------------------------------------------
+        # PAYMENT UPDATE SECTION
+        # -----------------------------------------------------
+        if loan_id:
+            try:
+                loan = Loan.objects.get(id=loan_id)
+
+                def get_decimal(field):
+                    try:
+                        return Decimal(request.POST.get(field, '0') or '0')
+                    except InvalidOperation:
+                        return Decimal('0')
+
+                cash  = get_decimal('cash')
+                bank1 = get_decimal('bank1')
+                bank2 = get_decimal('bank2')
+                adj   = get_decimal('adj')
+
+                total_payment = cash + bank1 + bank2 + adj
+                original_payment = total_payment
+
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(Sum('paid_to_principal'), Value(0), output_field=DecimalField()),
+                    total_paid_interest=Coalesce(Sum('paid_to_interest'), Value(0), output_field=DecimalField())
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+
+                # FIRST pay Interest
+                paid_to_interest = min(remaining_interest, total_payment)
+                total_payment -= paid_to_interest
+
+                # THEN pay Principal
+                paid_to_principal = min(remaining_principal, total_payment)
+                total_payment -= paid_to_principal
+
+                # Repayment Date Handling
+                date_str = request.POST.get('date')
+                selected_datetime = None
+                if date_str:
+                    try:
+                        selected_datetime = datetime.strptime(date_str, "%Y-%m-%d")
+                    except ValueError:
+                        pass
+
+                repayment = LoanRepayment.objects.create(
+                    loan=loan,
+                    total_payment=original_payment,
+                    paid_to_interest=paid_to_interest,
+                    paid_to_principal=paid_to_principal,
+                    payment_mode='mixed',
+                    remarks='',
+                    cash=cash,
+                    bank1=bank1,
+                    bank2=bank2,
+                    adj=adj,
+                    code=generate_unique_repayment_code(),
+                    type_of_loan=loan.type_of_loan
+                )
+
+                # Override repayment date if selected
+                if selected_datetime:
+                    repayment.created_at = selected_datetime
+                    repayment.save(update_fields=['created_at'])
+
+                # Auto close loan
+                if (remaining_interest - paid_to_interest) <= 0 and \
+                   (remaining_principal - paid_to_principal) <= 0:
+                    loan.loan_status = 'Closed'
+                    loan.save(update_fields=['loan_status'])
+
+                return JsonResponse({'status': 'success'})
+
+            except Loan.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Loan not found'}, status=404)
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # Fill missing loan types
+    existing_types = {item['loan_type'] for item in loans}
+    for loan_type in loan_types:
+        if loan_type not in existing_types:
+            loans.append({
+                'loan_type': loan_type,
+                'loan': None,
+                'balance': Decimal('0'),
+                'interest': Decimal('0'),
+                'loan_code': ''
+            })
+
+    return render(request, 'loans.html', {
+        'loans': loans,
+        'loan_types': loan_types,
+        'user_name': user_name,
+        'gen_no': gen_no,
+    })
+
+
+
+
+
+
+    def deposits_view(request):
+    deposit_types = ['FIXED DEPOSITS', 'THRIFT FUNDS', 'WELFARE COLLECTIONS']
+    loans = []
+    user_name = None
+    gen_no = None
+
+    if request.method == 'POST':
+        gen_no = request.POST.get('gen_no', '').strip()
+        loan_id = request.POST.get('loan_id')
+
+        # -----------------------------
+        # SEARCH BY GEN NO
+        # -----------------------------
+        if gen_no:
+            user = User.objects.filter(code=gen_no).first()
+            user_name = user.name if user else 'Unknown'
+
+        for dep_type in deposit_types:
+
+            loans_queryset = Loan.objects.filter(
+                gen_no=gen_no,
+                type_of_loan=dep_type,
+                loan_status='Active'
+            )
+
+            for loan in loans_queryset:
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(
+                        Sum('paid_to_principal'), Value(0), output_field=DecimalField()
+                    ),
+                    total_paid_interest=Coalesce(
+                        Sum('paid_to_interest'), Value(0), output_field=DecimalField()
+                    )
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+
+                # Auto close if cleared
+                if remaining_principal <= 0 and remaining_interest <= 0:
+                    loan.loan_status = "Closed"
+                    loan.save(update_fields=["loan_status"])
+                    continue   # Skip cleared loans
+
+                loans.append({
+                    'loan_type': dep_type,
+                    'loan': loan,
+                    'balance': remaining_principal,
+                    'interest': remaining_interest,
+                    'loan_code': loan.code,
+                })
+
+
+        if loan_id:
+            try:
+                loan = Loan.objects.get(id=loan_id)
+
+                def get_decimal(field_name):
+                    try:
+                        return Decimal(request.POST.get(field_name, "0") or "0")
+                    except InvalidOperation:
+                        return Decimal("0")
+
+                cash  = get_decimal('cash')
+                bank1 = get_decimal('bank1')
+                bank2 = get_decimal('bank2')
+                adj   = get_decimal('adj')
+
+                total_payment = cash + bank1 + bank2 + adj
+                original_payment = total_payment
+
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(
+                        Sum('paid_to_principal'), Value(0), output_field=DecimalField()
+                    ),
+                    total_paid_interest=Coalesce(
+                        Sum('paid_to_interest'), Value(0), output_field=DecimalField()
+                    )
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+
+                # FIRST pay interest
+                paid_to_interest = min(remaining_interest, total_payment)
+                total_payment -= paid_to_interest
+
+                # THEN pay principal
+                paid_to_principal = min(remaining_principal, total_payment)
+                total_payment -= paid_to_principal
+
+                # -----------------------------
+                # Handle repayment date
+                # -----------------------------
+                date_str = request.POST.get('date')
+                selected_datetime = None
+                if date_str:
+                    try:
+                        selected_datetime = datetime.strptime(date_str, "%Y-%m-%d")
+                    except ValueError:
+                        selected_datetime = None  # fallback to default
+
+                # Save Repayment
+                repayment = LoanRepayment.objects.create(
+                    loan=loan,
+                    total_payment=original_payment,
+                    paid_to_interest=paid_to_interest,
+                    paid_to_principal=paid_to_principal,
+                    payment_mode='mixed',
+                    remarks='',
+                    cash=cash,
+                    bank1=bank1,
+                    bank2=bank2,
+                    adj=adj,
+                    code=generate_unique_repayment_code(),
+                    type_of_loan=loan.type_of_loan
+                )
+
+                # Override created_at if a date was selected
+                if selected_datetime:
+                    repayment.created_at = selected_datetime
+                    repayment.save(update_fields=['created_at'])
+
+                # ----------------------------------------
+                # AUTO CLOSE AFTER PAYMENT IF CLEARED
+                # ----------------------------------------
+                if (remaining_principal - paid_to_principal) <= 0 and (remaining_interest - paid_to_interest) <= 0:
+                    loan.loan_status = "Closed"
+                    loan.save(update_fields=["loan_status"])
+
+                return JsonResponse({'status': 'success'})
+
+            except Loan.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Loan not found'}, status=404)
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # -----------------------------
+    # Ensure empty deposit types
+    # -----------------------------
+    existing_types = {x['loan_type'] for x in loans}
+
+    for dep_type in deposit_types:
+        if dep_type not in existing_types:
+            loans.append({
+                'loan_type': dep_type,
+                'loan': None,
+                'balance': Decimal('0'),
+                'interest': Decimal('0'),
+                'loan_code': '',
+                
+            })
+
+    return render(request, 'deposits.html', {
+        'loans': loans,
+        'loan_types': deposit_types,
+        'user_name': user_name,
+        'gen_no': gen_no,
+    })
+
+
+
+    
+
+def others(request):
+    gen_no = None
+    user_name = None
+
+    # ---------- GET USER ----------
+    if request.method == 'POST' and 'gen_no' in request.POST and not request.headers.get('x-requested-with'):
+        gen_no = request.POST.get('gen_no')
+        user = User.objects.filter(code=gen_no).first()
+        user_name = user.name if user else None
+
+    # ---------- ADD RECEIPT / PAYMENT (AJAX) ----------
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+
+        def d(val):
+            try:
+                return Decimal(val or 0)
+            except:
+                return Decimal('0')
+
+        data = request.POST
+
+        # ✅ Parse user-selected date (NAIVE datetime for SQLite)
+        date_str = data.get('date')
+        if not date_str:
+            return JsonResponse({'status': 'error', 'message': 'Please select a date'})
+
+        try:
+            created_at = datetime.combine(
+                datetime.strptime(date_str, "%Y-%m-%d").date(),
+                time.min  # 00:00:00
+            )
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid date format'})
+
+
+
+        # 🔹 Fetch user name automatically
+        gen_no = data.get('gen_no').strip()
+        user = User.objects.filter(code=gen_no).first()
+        name = user.name if user else ""
+
+        # ---------- CREATE TRANSACTION ----------
+        txn = OtherCashTransaction.objects.create(
+            transaction_type=data.get('transaction_type'),  # RECEIPT / PAYMENT
+            gen_no=data.get('gen_no'),
+            name=name, 
+            type_of_loan=data.get('type_of_loan'),
+            cash=d(data.get('cash')),
+            bank1=d(data.get('bank1')),
+            bank2=d(data.get('bank2')),
+            created_at=created_at  # ✅ SAVES SELECTED DATE
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'amount': str(txn.amount)
+        })
+
+    # ---------- PAGE RENDER ----------
+    return render(request, 'others.html', {
+        'gen_no': gen_no,
+        'user_name': user_name,
+    })
+
+
+
+    {% extends 'base.html' %}
+{% block content %}
+<style>
+
+/* --- FORCE REMOVE BUTTON BORDERS --- */
+.save-btn,
+.view-btn,
+.edit-btn {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Remove focus ring (Chrome/Edge/Firefox) */
+.save-btn:focus,
+.view-btn:focus,
+.edit-btn:focus,
+.save-btn:focus-visible,
+.view-btn:focus-visible,
+.edit-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ---------- Styles ---------- */
+.error-message { color: red; display: none; }
+.save-btn, .view-btn {
+    background-color: #4CAF50; border: none; color: white;
+    padding: 6px 10px; text-align: center; text-decoration: none;
+    display: inline-block; font-size: 12px; margin: 4px 2px; cursor: pointer;
+    border-radius: 4px; margin-left: 7%;
+}
+.view-btn { background-color: #008CBA; }
+.save-btn:hover { background-color: #45A049; }
+.view-btn:hover { background-color: #007BB5; }
+.submit-button:hover { background-color: green; color: white; }
+.editable { border: none; background: none; width: 100%; height: 100%; box-sizing: border-box; font-size: 14px; margin: 0; padding: 8px 10px; display: inline-block; }
+.editable:focus { outline: none; border: 2px solid #4CAF50; }
+.alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px 40px; border-radius: 10px; color: #fff; opacity: 0.95; z-index: 1000; font-size: 18px; text-align: center; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+.alert-success { background-color: #28A745; }
+.alert-danger { background-color: #ff0019; }
+.alert-warning { background-color: yellow; color: #212529; font-size: 16px; padding: 10px; border-radius: 5px; }
+#code_suggestions {
+    background-color: #fff; border: 1px solid #ccc; border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); position: absolute; z-index: 1000;
+    margin-top: 5px; width: 200px; max-height: 150px; overflow-y: auto;
+}
+#code_suggestions option { padding: 8px 10px; background-color: #fff; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s ease; }
+#code_suggestions option:hover { background-color: #f0f0f0; color: #333; }
+#code_suggestions option:last-child { border-bottom: none; }
+
+
+.edit-btn {
+    background-color: #ffc107;
+    color: #343a40;
+}
+
+.edit-btn:hover {
+    background-color: #e0a800;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+}
+
+.delete-btn:hover {
+    background-color: #bd2130;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 6px;              /* space between buttons */
+    justify-content: center;
+    align-items: center;
+}
+
+.actions-cell a {
+    text-decoration: none;
+}
+
+
+/* ---------- Icon Action Buttons ---------- */
+.save-btn,
+.view-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* Colors already defined */
+.save-btn { background-color: #4CAF50; }
+.view-btn { background-color: #008CBA; }
+
+.edit-btn {
+    background-color: #ffc107;
+    color: #343a40;
+}
+
+/* Hover */
+.save-btn:hover { background-color: #45A049; }
+.view-btn:hover { background-color: #007BB5; }
+.edit-btn:hover { background-color: #e0a800; }
+
+/* Prevent icon click issues */
+.save-btn i,
+.view-btn i {
+    pointer-events: none;
+}
+
+
+/* Reduce space between date text and calendar icon */
+input[type="date"] {
+    padding-right: 6px;   /* default is usually 12–16px */
+}
+
+/* Chrome / Edge / Safari */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-left: 2px;     /* pulls icon closer */
+    padding: 0;
+}
+
+/* Optional: make icon slightly smaller */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    transform: scale(0.9);
+}
+input[type="date"] {
+    padding-right: 4px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-left: 0;
+}
+
+
+/* EDIT MODAL */
+.modal{
+    display:none;
+    position:fixed;
+    z-index:3000;
+    left:0;top:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+}
+
+.modal-content{
+    background:#fff;
+    margin:5% auto;
+    padding:20px;
+    width:420px;
+    border-radius:10px;
+}
+
+.close-modal{
+    float:right;
+    font-size:22px;
+    cursor:pointer;
+}
+
+</style>
+
+<div class="content">
+    <!-- GEN NO INPUT FOR DEPOSITS -->
+    <form class="center-form1" method="post" action="{% url 'deposits' %}">
+        {% csrf_token %}
+        <div style="position: relative;">
+            <input type="text" id="gen_no_input" name="gen_no" placeholder="Gen.No." class="input-box1" autocomplete="off">
+            <select id="code_suggestions" class="input-box1" size="5" style="display:none; position:absolute; width:200px;"></select>
+            <button type="submit" class="submit-button" disabled>Submit</button>
+        </div>
+        <input type="text" name="name" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" name="name" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+
+    <br><br>
+    <h3>RECEIPTS💰</h3><br>
+
+    <!-- NEW TABLE FORM -->
+    <div class="table-container2">
+        <form id="newTableForm" method="post" action="{% url 'submit_new_table' %}">
+            {% csrf_token %}
+            <input type="hidden" name="gen_no" value="{{ gen_no }}">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th style="color: yellow;">Loan Type</th>
+                        <th style="color: yellow;">Amount</th>
+                        <th style="color: yellow;">Cash</th>
+                        <th style="color: yellow;">Bank1</th>
+                        <th style="color: yellow;">Bank2</th>
+                        <th style="color: yellow;">Adj</th>
+                        <th style="width:140px">Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <select name="Loan Type" class="editable">
+                                <option value="">Select Loan Type</option>
+                                <option value="FIXED DEPOSITS">FIXED DEPOSITS</option>
+                                <option value="THRIFT FUNDS">THRIFT FUNDS</option>
+                                <option value="WELFARE COLLECTIONS">WELFARE COLLECTIONS</option>
+                            </select>
+                        </td>
+                        <td><input type="text" class="editable" name="Amount" placeholder="Amount"></td>
+                        <td><input type="text" class="editable" name="Cash" placeholder="Cash"></td>
+                        <td><input type="text" class="editable" name="Bank1" placeholder="Bank1"></td>
+                        <td><input type="text" class="editable" name="Bank2" placeholder="Bank2"></td>
+                        <td><input type="text" class="editable" name="Adj" placeholder="Adj"></td>
+                        <td><input type="date" class="editable payment-date" name="date"></td>
+                        <td><button type="submit" class="submit-btn">Submit</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+
+    <br><br>
+    <h3>PAYMENTS💸</h3><br>
+
+    <!-- EXISTING LOAN TABLE -->
+    <div class="table-container1">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Type of Receipt</th>
+                    <th>Ref</th>
+                    <th>Balance</th>
+                    <th>Interest</th>
+                    <th style="color: yellow;">Cash</th>
+                    <th style="color: yellow;">Bank1</th>
+                    <th style="color: yellow;">Bank2</th>
+                    <th style="color: yellow;">Adj</th>
+                    <th style="width:140px">Date</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in loans %}
+                <tr style="background-color: #ffffff">
+                    <td>{{ item.loan_type }}</td>
+                    <td>{{ item.loan.code }}</td>
+                    <td>{% if item.balance != 0 %}{{ item.balance }}{% endif %}</td>
+                    <td>{% if item.interest != 0 %}{{ item.interest }}{% endif %}</td>
+                    <td>{% if item.loan %}<input name="cash" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td>{% if item.loan %}<input name="bank1" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td>{% if item.loan %}<input name="bank2" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td>{% if item.loan %}<input name="adj" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td><input type="date" class="editable receipt-date" name="date" value="{% now 'Y-m-d' %}"></td>
+<td>
+    {% if item.loan %}
+
+    <!-- SAVE -->
+    <button type="button"
+            class="save-btn"
+            data-loan-id="{{ item.loan.id }}"
+            title="Save">
+        <i class="fas fa-save"></i>
+    </button>
+
+    <button type="button"
+            class="view-btn edit-btn open-edit-modal"
+            data-loan-id="{{ item.loan.id }}"
+            title="Edit">
+        <i class="fas fa-pen"></i>
+    </button>
+
+
+    <!-- VIEW -->
+    <a href="{% url 'mtl_collection' item.loan.id %}"
+       class="view-btn"
+       title="View">
+        <i class="fas fa-eye"></i>
+    </a>
+
+    {% endif %}
+</td>
+
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- EDIT LOAN MODAL -->
+<div id="editLoanModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Edit Loan ✏️</h3>
+
+        <input type="hidden" id="edit-loan-id">
+
+        <table class="styled-table">
+            <tr><th>Amount</th><td><input id="edit-amount" class="editable"></td></tr>
+            <tr><th>Interest</th><td><input id="edit-interest" class="editable"></td></tr>
+            <tr><th>Cash</th><td><input id="edit-cash" class="editable"></td></tr>
+            <tr><th>Bank1</th><td><input id="edit-bank1" class="editable"></td></tr>
+            <tr><th>Bank2</th><td><input id="edit-bank2" class="editable"></td></tr>
+            <tr><th>Adj</th><td><input id="edit-adj" class="editable"></td></tr>
+            <tr><th>Date</th><td><input type="date" id="edit-date" class="editable"></td></tr>
+        </table>
+
+        <br>
+
+        <button id="updateLoanBtn" class="save-btn">Update</button>
+    </div>
+</div>
+
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- ---------- SCRIPT ---------- -->
+    <script>
+    $(document).ready(function() {
+
+        // ---------- GEN NO AUTOCOMPLETE ----------
+        const $depositInput = $('#gen_no_input');
+        const $depositDropdown = $('#code_suggestions');
+
+        function fetchUsers(query = '') {
+            $.ajax({
+                url: '{% url "search_user_codes" %}',
+                data: { 'term': query },
+                dataType: 'json',
+                success: function(data) {
+                    $depositDropdown.empty();
+                    if (data.length) {
+                        data.forEach(function(user) {
+                            $depositDropdown.append('<option value="' + user.code + '">' + user.code + ' - [' + user.name + ']</option>');
+                        });
+                        $depositDropdown.show();
+                        $('button[type="submit"]').prop('disabled', false);
+                    } else {
+                        $depositDropdown.hide();
+                        if(query.length > 0) showAlert('No user found matching your input.', 'warning');
+                        $('button[type="submit"]').prop('disabled', true);
+                    }
+                },
+                error: function() {
+                    $depositDropdown.hide();
+                    showAlert('An error occurred while searching.', 'danger');
+                    $('button[type="submit"]').prop('disabled', true);
+                }
+            });
+        }
+
+        // Show all users on focus
+        $depositInput.on('focus', function() { fetchUsers(''); });
+        // Filter while typing
+        $depositInput.on('keyup', function() { fetchUsers($(this).val()); });
+
+        // Click on suggestion
+        $depositDropdown.on('click', 'option', function() {
+            $depositInput.val($(this).val());
+            $depositDropdown.hide();
+            $('button[type="submit"]').prop('disabled', false);
+        });
+
+        // Hide dropdown on outside click
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#gen_no_input, #code_suggestions').length) {
+                $depositDropdown.hide();
+            }
+        });
+
+        // ---------- ALERT FUNCTION ----------
+        window.showAlert = function(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        // ---------- GET TODAY DATE ----------
+        function getTodayDate() {
+            const d = new Date();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${d.getFullYear()}-${m}-${day}`;
+        }
+
+        // Auto-fill date inputs
+        document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = getTodayDate(); });
+
+        // ---------- SAVE BUTTONS ----------
+        const saveButtons = document.querySelectorAll('.save-btn');
+        function clearRowInputs(row) {
+            ['cash','bank1','bank2','adj'].forEach(name => {
+                const inp = row.querySelector(`input[name="${name}"]`);
+                if(inp) inp.value = '';
+            });
+        }
+        function showLoader() {
+            const loader = document.createElement('div');
+            loader.className = 'alert alert-warning';
+            loader.textContent = 'Please wait...';
+            loader.style.backgroundColor = 'yellow';
+            loader.style.color = 'black';
+            document.body.appendChild(loader);
+            return loader;
+        }
+        function hideLoader(loader) { loader.remove(); }
+
+        saveButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const loanId = this.dataset.loanId;
+                const cash = row.querySelector('input[name="cash"]').value || '0';
+                const bank1 = row.querySelector('input[name="bank1"]').value || '0';
+                const bank2 = row.querySelector('input[name="bank2"]').value || '0';
+                const adj = row.querySelector('input[name="adj"]').value || '0';
+                const date = row.querySelector('input[name="date"]').value || getTodayDate();
+
+                if([cash,bank1,bank2,adj].every(v=>parseFloat(v)===0)){
+                    showAlert('Please enter at least one amount.', 'warning'); return;
+                }
+
+                const formData = new FormData();
+                formData.append('loan_id', loanId);
+                formData.append('cash', cash);
+                formData.append('bank1', bank1);
+                formData.append('bank2', bank2);
+                formData.append('adj', adj);
+                formData.append('date', date);
+
+                const loader = showLoader();
+
+                fetch('{% url "deposits" %}', {method:'POST', body:formData, headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+                .then(res=>res.json())
+                .then(data=>{
+                    hideLoader(loader);
+                    if(data.status==='success'){
+                        showAlert('Loan details updated successfully!', 'success');
+                        clearRowInputs(row);
+                        setTimeout(()=>window.location.reload(), 3000);
+                    } else { showAlert('Error: '+data.message,'danger'); }
+                })
+                .catch(err=>{ hideLoader(loader); showAlert('An error occurred.', 'danger'); console.error(err); });
+            });
+        });
+        // ---------- EDIT MODAL OPEN ----------
+$('.open-edit-modal').click(function(){
+
+    const loanId = $(this).data('loan-id');
+
+    fetch(`/get-loan/${loanId}/`)
+    .then(res=>res.json())
+    .then(data=>{
+
+        $('#edit-loan-id').val(data.id);
+        $('#edit-amount').val(data.amount);
+        $('#edit-interest').val(data.interest);
+        $('#edit-cash').val(data.cash);
+        $('#edit-bank1').val(data.bank1);
+        $('#edit-bank2').val(data.bank2);
+        $('#edit-adj').val(data.adj);
+        $('#edit-date').val(data.date);
+
+        $('#editLoanModal').show();
+    });
+
+});
+
+// CLOSE
+$('.close-modal').click(function(){
+    $('#editLoanModal').hide();
+});
+
+// UPDATE
+$('#updateLoanBtn').click(function(){
+
+    const formData = new FormData();
+
+    formData.append('loan_id',$('#edit-loan-id').val());
+    formData.append('amount',$('#edit-amount').val());
+    formData.append('interest',$('#edit-interest').val());
+    formData.append('cash',$('#edit-cash').val());
+    formData.append('bank1',$('#edit-bank1').val());
+    formData.append('bank2',$('#edit-bank2').val());
+    formData.append('adj',$('#edit-adj').val());
+    formData.append('date',$('#edit-date').val());
+
+    fetch('/update-loan/',{
+        method:'POST',
+        body:formData,
+        headers:{'X-CSRFToken':'{{ csrf_token }}'}
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.status==='success'){
+            showAlert('Loan updated successfully','success');
+            setTimeout(()=>location.reload(),1500);
+        }
+    });
+
+});
+
+
+        // ---------- NEW TABLE FORM ----------
+        const newTableForm = document.getElementById('newTableForm');
+        newTableForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            const formData = new FormData(newTableForm);
+            const loanType = formData.get('Loan Type');
+            const amount = parseFloat(formData.get('Amount'))||0;
+            const cash = parseFloat(formData.get('Cash'))||0;
+            const bank1 = parseFloat(formData.get('Bank1'))||0;
+            const bank2 = parseFloat(formData.get('Bank2'))||0;
+            const online = parseFloat(formData.get('Online'))||0;
+            const adj = parseFloat(formData.get('Adj'))||0;
+
+            if(!loanType){showAlert("Select Loan Type","warning"); return;}
+            if(!amount){showAlert("Enter Amount","warning"); return;}
+            if(!cash && !bank1 && !bank2 && !online && !adj){showAlert("Enter at least one value","warning"); return;}
+            if(amount !== (cash+bank1+bank2+online+adj)){showAlert(`Amount ${amount} ≠ ${cash+bank1+bank2+online+adj}`,'warning'); return;}
+
+            formData.set('date', formData.get('date')||getTodayDate());
+            const loader = showLoader();
+            fetch('{% url "submit_new_table" %}', {method:'POST', body:formData, headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+            .then(res=>res.json())
+            .then(data=>{ hideLoader(loader); if(data.status==='success'){showAlert('Loan added successfully!','success'); setTimeout(()=>window.location.reload(),2000);} else{showAlert('Error: '+data.message,'danger');} })
+            .catch(err=>{ hideLoader(loader); showAlert('An error occurred.', 'danger'); console.error(err); });
+        });
+
+    }); // document ready
+    </script>
+
+{% endblock %}
+
+
+
+
+def loans_view(request):
+
+    loan_types = ['MTL LOAN', 'FDL LOAN', 'KVP/NSC LOAN']
+
+    loans = []
+    user_name = None
+    gen_no = None
+
+    # -----------------------------------------------------
+    # ACCEPT GEN NO FROM GET (dashboard redirect)
+    # -----------------------------------------------------
+    if request.method == 'GET':
+        gen_no = request.GET.get('gen_no', '').strip()
+
+    # -----------------------------------------------------
+    # POST SECTION (existing functionality intact)
+    # -----------------------------------------------------
+    if request.method == 'POST':
+
+        gen_no = request.POST.get('gen_no', '').strip()
+        loan_id = request.POST.get('loan_id')
+
+        # ================= PAYMENT UPDATE =================
+        if loan_id:
+            try:
+                loan = Loan.objects.get(id=loan_id)
+
+                def get_decimal(field):
+                    try:
+                        return Decimal(request.POST.get(field, '0') or '0')
+                    except InvalidOperation:
+                        return Decimal('0')
+
+                cash  = get_decimal('cash')
+                bank1 = get_decimal('bank1')
+                bank2 = get_decimal('bank2')
+                adj   = get_decimal('adj')
+
+                total_payment = cash + bank1 + bank2 + adj
+                original_payment = total_payment
+
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(Sum('paid_to_principal'), Value(0), output_field=DecimalField()),
+                    total_paid_interest=Coalesce(Sum('paid_to_interest'), Value(0), output_field=DecimalField())
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+
+                # FIRST INTEREST
+                paid_to_interest = min(remaining_interest, total_payment)
+                total_payment -= paid_to_interest
+
+                # THEN PRINCIPAL
+                paid_to_principal = min(remaining_principal, total_payment)
+                total_payment -= paid_to_principal
+
+                # DATE
+                date_str = request.POST.get('date')
+                selected_datetime = None
+                if date_str:
+                    try:
+                        selected_datetime = datetime.strptime(date_str, "%Y-%m-%d")
+                    except ValueError:
+                        pass
+
+                repayment = LoanRepayment.objects.create(
+                    loan=loan,
+                    total_payment=original_payment,
+                    paid_to_interest=paid_to_interest,
+                    paid_to_principal=paid_to_principal,
+                    payment_mode='mixed',
+                    remarks='',
+                    cash=cash,
+                    bank1=bank1,
+                    bank2=bank2,
+                    adj=adj,
+                    code=generate_unique_repayment_code(),
+                    type_of_loan=loan.type_of_loan
+                )
+
+                if selected_datetime:
+                    repayment.created_at = selected_datetime
+                    repayment.save(update_fields=['created_at'])
+
+                # AUTO CLOSE
+                if (remaining_interest - paid_to_interest) <= 0 and \
+                   (remaining_principal - paid_to_principal) <= 0:
+                    loan.loan_status = 'Closed'
+                    loan.save(update_fields=['loan_status'])
+
+                return JsonResponse({'status': 'success'})
+
+            except Loan.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Loan not found'}, status=404)
+
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # -----------------------------------------------------
+    # DISPLAY LOANS (WORKS FOR BOTH GET + POST)
+    # -----------------------------------------------------
+    if gen_no:
+
+        user = User.objects.filter(code=gen_no).first()
+        user_name = user.name if user else 'Unknown'
+
+        for loan_type in loan_types:
+
+            loan = Loan.objects.filter(
+                gen_no=gen_no,
+                type_of_loan=loan_type,
+                loan_status='Active'
+            ).first()
+
+            if loan:
+
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(Sum('paid_to_principal'), Value(0), output_field=DecimalField()),
+                    total_paid_interest=Coalesce(Sum('paid_to_interest'), Value(0), output_field=DecimalField())
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+
+                if remaining_principal <= 0 and remaining_interest <= 0:
+                    loan.loan_status = 'Closed'
+                    loan.save(update_fields=['loan_status'])
+                    continue
+
+                loans.append({
+                    'loan_type': loan_type,
+                    'loan': loan,
+                    'balance': remaining_principal,
+                    'interest': remaining_interest,
+                    'loan_code': loan.code,
+                })
+
+    # -----------------------------------------------------
+    # FILL EMPTY TYPES (unchanged)
+    # -----------------------------------------------------
+    existing_types = {item['loan_type'] for item in loans}
+
+    for loan_type in loan_types:
+        if loan_type not in existing_types:
+            loans.append({
+                'loan_type': loan_type,
+                'loan': None,
+                'balance': Decimal('0'),
+                'interest': Decimal('0'),
+                'loan_code': ''
+            })
+
+    return render(request, 'loans.html', {
+        'loans': loans,
+        'loan_types': loan_types,
+        'user_name': user_name,
+        'gen_no': gen_no,
+    })
+
+
+
+
+
+
+    from decimal import Decimal, InvalidOperation
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.db.models import Sum, Value, DecimalField
+from django.db.models.functions import Coalesce
+from .models import User, Loan, LoanRepayment, generate_unique_repayment_code
+from datetime import datetime
+from django.db.models.functions import TruncMonth
+from django.db.models import Sum, F, Q  # other imports you might already have
+from django.db.models.functions import TruncMonth
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth  # <<-- Add this
+from dateutil.relativedelta import relativedelta
+from decimal import Decimal
+from django.shortcuts import render, get_object_or_404
+import calendar
+from django.contrib.auth import authenticate, login, logout
+
+from decimal import Decimal, InvalidOperation
+from datetime import datetime
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.utils import timezone
+from .models import User, Loan, LoanRepayment, generate_unique_repayment_code
+
+
+def loans_view(request):
+
+    loan_types = ['MTL LOAN', 'FDL LOAN', 'KVP/NSC LOAN']
+
+    loans = []
+    user_name = None
+    gen_no = None
+
+    # -----------------------------------------------------
+    # GET GEN NO
+    # -----------------------------------------------------
+    if request.method == 'GET':
+        gen_no = request.GET.get('gen_no', '').strip()
+
+    # -----------------------------------------------------
+    # POST SECTION (REPAYMENT)
+    # -----------------------------------------------------
+    if request.method == 'POST':
+
+        gen_no = request.POST.get('gen_no', '').strip()
+        loan_id = request.POST.get('loan_id')
+
+        if loan_id:
+            try:
+                loan = Loan.objects.get(id=loan_id)
+
+                def get_decimal(field):
+                    try:
+                        return Decimal(request.POST.get(field, '0') or '0')
+                    except InvalidOperation:
+                        return Decimal('0')
+
+                cash = get_decimal('cash')
+                bank1 = get_decimal('bank1')
+                bank2 = get_decimal('bank2')
+                adj = get_decimal('adj')
+
+                total_payment = cash + bank1 + bank2 + adj
+                original_payment = total_payment
+
+                # ---------------- DATE ----------------
+                date_str = request.POST.get('date')
+                if date_str:
+                    repayment_datetime = datetime.strptime(date_str, "%Y-%m-%d")
+                else:
+                    repayment_datetime = timezone.now()
+
+                # =====================================================
+                # PROPER AMORTIZATION
+                # payment → interest → principal
+                # =====================================================
+
+                payment = total_payment
+
+                paid_to_interest = min(loan.interest, payment)
+                loan.interest -= paid_to_interest
+                payment -= paid_to_interest
+
+                paid_to_principal = min(loan.amount, payment)
+                loan.amount -= paid_to_principal
+
+                # =====================================================
+                # SAVE REPAYMENT RECORD
+                # =====================================================
+
+                repayment = LoanRepayment.objects.create(
+                    loan=loan,
+                    total_payment=original_payment,
+                    paid_to_interest=paid_to_interest,
+                    paid_to_principal=paid_to_principal,
+                    payment_mode='mixed',
+                    remarks='',
+                    cash=cash,
+                    bank1=bank1,
+                    bank2=bank2,
+                    adj=adj,
+                    code=generate_unique_repayment_code(),
+                    type_of_loan=loan.type_of_loan
+                )
+
+                repayment.created_at = repayment_datetime
+                repayment.save(update_fields=['created_at'])
+
+                # =====================================================
+                # AUTO CLOSE LOAN
+                # =====================================================
+
+                if loan.amount <= 0 and loan.interest <= 0:
+                    loan.loan_status = 'Closed'
+
+                loan.save(update_fields=['amount', 'interest', 'loan_status'])
+
+                return JsonResponse({'status': 'success'})
+
+            except Loan.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Loan not found'}, status=404)
+
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # -----------------------------------------------------
+    # DISPLAY SECTION
+    # -----------------------------------------------------
+    if gen_no:
+
+        user = User.objects.filter(code=gen_no).first()
+        user_name = user.name if user else 'Unknown'
+
+        for loan_type in loan_types:
+
+            loan = Loan.objects.filter(
+                gen_no=gen_no,
+                type_of_loan=loan_type,
+                loan_status='Active'
+            ).first()
+
+            if loan:
+                loans.append({
+                    'loan_type': loan_type,
+                    'loan': loan,
+                    'balance': loan.amount,
+                    'interest': loan.interest,
+                    'loan_code': loan.code,
+                })
+
+    existing_types = {item['loan_type'] for item in loans}
+
+    for loan_type in loan_types:
+        if loan_type not in existing_types:
+            loans.append({
+                'loan_type': loan_type,
+                'loan': None,
+                'balance': Decimal('0'),
+                'interest': Decimal('0'),
+                'loan_code': ''
+            })
+
+    return render(request, 'loans.html', {
+        'loans': loans,
+        'loan_types': loan_types,
+        'user_name': user_name,
+        'gen_no': gen_no,
+    })
+
+
+
+    
+def loans_view(request):
+
+    loan_types = ['MTL LOAN', 'FDL LOAN', 'KVP/NSC LOAN']
+
+    loans = []
+    user_name = None
+    gen_no = None
+
+    # -----------------------------------------------------
+    # ACCEPT GEN NO FROM GET (dashboard redirect)
+    # -----------------------------------------------------
+    if request.method == 'GET':
+        gen_no = request.GET.get('gen_no', '').strip()
+
+    # -----------------------------------------------------
+    # POST SECTION (existing functionality intact)
+    # -----------------------------------------------------
+    if request.method == 'POST':
+
+        gen_no = request.POST.get('gen_no', '').strip()
+        loan_id = request.POST.get('loan_id')
+
+        # ================= PAYMENT UPDATE =================
+        if loan_id:
+            try:
+                loan = Loan.objects.get(id=loan_id)
+
+                def get_decimal(field):
+                    try:
+                        return Decimal(request.POST.get(field, '0') or '0')
+                    except InvalidOperation:
+                        return Decimal('0')
+
+                cash  = get_decimal('cash')
+                bank1 = get_decimal('bank1')
+                bank2 = get_decimal('bank2')
+                adj   = get_decimal('adj')
+
+                total_payment = cash + bank1 + bank2 + adj
+                original_payment = total_payment
+
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(Sum('paid_to_principal'), Value(0), output_field=DecimalField()),
+                    total_paid_interest=Coalesce(Sum('paid_to_interest'), Value(0), output_field=DecimalField())
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+
+                # FIRST INTEREST
+                paid_to_interest = min(remaining_interest, total_payment)
+                total_payment -= paid_to_interest
+
+                # THEN PRINCIPAL
+                paid_to_principal = min(remaining_principal, total_payment)
+                total_payment -= paid_to_principal
+
+                # DATE
+                date_str = request.POST.get('date')
+                selected_datetime = None
+                if date_str:
+                    try:
+                        selected_datetime = datetime.strptime(date_str, "%Y-%m-%d")
+                    except ValueError:
+                        pass
+
+                repayment = LoanRepayment.objects.create(
+                    loan=loan,
+                    total_payment=original_payment,
+                    paid_to_interest=paid_to_interest,
+                    paid_to_principal=paid_to_principal,
+                    payment_mode='mixed',
+                    remarks='',
+                    cash=cash,
+                    bank1=bank1,
+                    bank2=bank2,
+                    adj=adj,
+                    code=generate_unique_repayment_code(),
+                    type_of_loan=loan.type_of_loan
+                )
+
+                if selected_datetime:
+                    repayment.created_at = selected_datetime
+                    repayment.save(update_fields=['created_at'])
+
+                # AUTO CLOSE
+                if (remaining_interest - paid_to_interest) <= 0 and \
+                   (remaining_principal - paid_to_principal) <= 0:
+                    loan.loan_status = 'Closed'
+                    loan.save(update_fields=['loan_status'])
+
+                return JsonResponse({'status': 'success'})
+
+            except Loan.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Loan not found'}, status=404)
+
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # -----------------------------------------------------
+    # DISPLAY LOANS (WORKS FOR BOTH GET + POST)
+    # -----------------------------------------------------
+    if gen_no:
+
+        user = User.objects.filter(code=gen_no).first()
+        user_name = user.name if user else 'Unknown'
+
+        for loan_type in loan_types:
+
+            loan = Loan.objects.filter(
+                gen_no=gen_no,
+                type_of_loan=loan_type,
+                loan_status='Active'
+            ).first()
+
+            if loan:
+
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(Sum('paid_to_principal'), Value(0), output_field=DecimalField()),
+                    total_paid_interest=Coalesce(Sum('paid_to_interest'), Value(0), output_field=DecimalField())
+                )
+
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
+
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+
+                if remaining_principal <= 0 and remaining_interest <= 0:
+                    loan.loan_status = 'Closed'
+                    loan.save(update_fields=['loan_status'])
+                    continue
+
+                loans.append({
+                    'loan_type': loan_type,
+                    'loan': loan,
+                    'balance': remaining_principal,
+                    'interest': remaining_interest,
+                    'loan_code': loan.code,
+                })
+
+    # -----------------------------------------------------
+    # FILL EMPTY TYPES (unchanged)
+    # -----------------------------------------------------
+    existing_types = {item['loan_type'] for item in loans}
+
+    for loan_type in loan_types:
+        if loan_type not in existing_types:
+            loans.append({
+                'loan_type': loan_type,
+                'loan': None,
+                'balance': Decimal('0'),
+                'interest': Decimal('0'),
+                'loan_code': ''
+            })
+
+    return render(request, 'loans.html', {
+        'loans': loans,
+        'loan_types': loan_types,
+        'user_name': user_name,
+        'gen_no': gen_no,
+    })
+
+
+

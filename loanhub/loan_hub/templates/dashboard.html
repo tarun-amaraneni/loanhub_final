@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+
+/* ---------- FORCE REMOVE BUTTON BORDERS ---------- */
+/* ---------- SUBMIT BUTTON NORMAL ---------- */
+/* SAME AS DEPOSITS PAGE */
+.submit-button:hover{
+    background-color: green;
+    color: white;
+}
+
+/* ---------- CLICK / PRESSED ---------- */
+.submit-button:active{
+    background-color:#008001;
+}
+
+.go-btn{
+    border:none !important;
+    outline:none !important;
+    box-shadow:none !important;
+    appearance:none;
+    -webkit-appearance:none;
+}
+
+/* ---------- AUTOCOMPLETE DROPDOWN SAME AS DEPOSITS ---------- */
+#code_suggestions {
+    background-color:#fff;
+    border:1px solid #ccc;
+    border-radius:4px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.1);
+    position:absolute;
+    z-index:1000;
+    margin-top:5px;
+    width:200px;
+    max-height:150px;
+    overflow-y:auto;
+}
+
+#code_suggestions option {
+    padding:8px 10px;
+    background-color:#fff;
+    border-bottom:1px solid #eee;
+    cursor:pointer;
+    transition:background-color 0.2s ease;
+}
+
+#code_suggestions option:hover {
+    background-color:#f0f0f0;
+    color:#333;
+}
+
+#code_suggestions option:last-child {
+    border-bottom:none;
+}
+
+/* ---------- GO BUTTON SAME FEEL AS ACTION BUTTONS ---------- */
+.go-btn{
+    background-color:#008001;   /* same as view-btn */
+    color:#fff;
+    padding:6px 10px;
+    border-radius:6px;
+    font-size:12px;
+    text-decoration:none;
+    display:inline-block;
+    cursor:pointer;
+    border:none;
+}
+
+/* SAME HOVER AS DEPOSITS VIEW BUTTON */
+.go-btn:hover{
+    background-color:#008001;
+}
+
+</style>
+
+
+<div class="content">
+
+<!-- ================= GEN NO FORM ================= -->
+<form class="center-form1" method="post" action="{% url 'dashboard' %}">
+{% csrf_token %}
+<div style="position: relative;">
+
+<input type="text"
+       id="gen_no_input"
+       name="gen_no"
+       placeholder="Gen.No."
+       class="input-box1"
+       autocomplete="off">
+
+<select id="code_suggestions"
+        class="input-box1"
+        size="5"
+        style="display:none; position:absolute; width:200px;"></select>
+
+<button type="submit"
+        class="submit-button"
+        disabled>Submit</button>
+
+</div>
+
+<input type="text" class="input-box1" value="{{ gen_no }}" readonly>
+<input type="text" class="input-box1" value="{{ user_name }}" readonly>
+
+</form>
+
+<br><br>
+<!-- ================= LOANS TABLE ================= -->
+<h3>LOANS 💰</h3>
+    <br>
+<div class="table-container1">
+<table class="styled-table">
+
+<thead>
+<tr>
+<th>Gen No</th>
+<th>Name</th>
+<th>Type</th>
+<th>Ref</th>
+<th>Balance</th>
+<th>Interest</th>
+<th>Date</th>
+<th>Status</th>   <!-- Status column -->
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+{% for item in loans %}
+<tr>
+<td>{{ item.gen_no }}</td>
+<td>{{ item.name }}</td>
+<td>{{ item.type }}</td>
+<td>{{ item.ref }}</td>
+<td>{{ item.balance|floatformat:2 }}</td>
+<td>{{ item.interest|floatformat:2 }}</td>
+<td>{{ item.created_at|date:"Y-m-d" }}</td>
+<td>
+  {% if item.status == "Active" %}
+    <button class="status-btn active">Active</button>
+  {% else %}
+    <button class="status-btn closed">Closed</button>
+  {% endif %}
+</td>
+<td>
+<a href="{% url 'loans' %}?gen_no={{ item.gen_no }}" class="go-btn">Go To →</a>
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="9" style="text-align:center; color:gray;">No records found</td>
+</tr>
+{% endfor %}
+</tbody>
+
+
+</table>
+</div>
+
+<br><br>
+
+<!-- ================= DEPOSITS ================= -->
+<h3>DEPOSITS 🏦</h3>
+    <br>
+<div class="table-container2">
+<table class="styled-table">
+
+<thead>
+<tr>
+<th>Gen No</th>
+<th>Name</th>
+<th>Type</th>
+<th>Ref</th>
+<th>Balance</th>
+<th>Interest</th>
+<th>Date</th>
+<th>Status</th>  <!-- Status column -->
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for item in deposits %}
+<tr>
+<td>{{ item.gen_no }}</td>
+<td>{{ item.name }}</td>
+<td>{{ item.type }}</td>
+<td>{{ item.ref }}</td>
+<td>{{ item.balance|floatformat:2 }}</td>
+<td>{{ item.interest|floatformat:2 }}</td>
+<td>{{ item.created_at|date:"Y-m-d" }}</td>
+<td>
+  {% if item.status == "Active" %}
+    <button class="status-btn active">Active</button>
+  {% else %}
+    <button class="status-btn closed">Closed</button>
+  {% endif %}
+</td>
+<td>
+<a href="{% url 'deposits' %}?gen_no={{ item.gen_no }}" class="go-btn">Go To →</a>
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="9" style="text-align:center; color:gray;">No records found</td>
+</tr>
+{% endfor %}
+</tbody>
+
+
+</table>
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+.status-btn {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #fff;
+    cursor: default;
+}
+
+.status-btn.active {
+    background-color: #16a34a; /* Green */
+}
+
+.status-btn.closed {
+    background-color: #dc2626; /* Red */
+}
+</style>
+
+<br><br>
+
+<!-- ================= OTHERS ================= -->
+<h3>OTHERS 📊</h3>
+    <br>
+<div class="table-container3">
+<table class="styled-table">
+
+<thead>
+<tr>
+<th>Gen No</th>
+<th>Name</th>
+<th>Type</th>
+<th>Ref</th>
+<th>Amount</th>
+<th>Date</th>
+<th>Action</th>
+
+</tr>
+</thead>
+
+<tbody>
+{% for item in others %}
+<tr>
+<td>{{ item.gen_no }}</td>
+<td>{{ item.name }}</td>
+<td>{{ item.type_of_loan }}</td>
+<td>{{ item.ref }}</td>
+<td>{{ item.amount|floatformat:2 }}</td>
+<td>{{ item.created_at|date:"Y-m-d" }}</td>
+<td>
+<a href="{% url 'others' %}?gen_no={{ item.gen_no }}" class="go-btn">Go To →</a>
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="7" style="text-align:center; color:gray;">No records found</td>
+</tr>
+{% endfor %}
+</tbody>
+
+
+</table>
+</div>
+
+</div>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<script>
+$(document).ready(function(){
+
+const $input = $('#gen_no_input');
+const $dropdown = $('#code_suggestions');
+
+function fetchUsers(query=''){
+$.ajax({
+url:'{% url "search_user_codes" %}',
+data:{term:query},
+dataType:'json',
+success:function(data){
+
+$dropdown.empty();
+
+if(data.length){
+
+data.forEach(function(user){
+$dropdown.append(
+'<option value="'+user.code+'">'+
+user.code+' - ['+user.name+']</option>'
+);
+});
+
+$dropdown.show();
+$('button[type="submit"]').prop('disabled',false);
+
+}else{
+$dropdown.hide();
+$('button[type="submit"]').prop('disabled',true);
+}
+
+}
+});
+}
+
+$input.on('focus',function(){fetchUsers('');});
+$input.on('keyup',function(){fetchUsers($(this).val());});
+
+$dropdown.on('click','option',function(){
+$input.val($(this).val());
+$dropdown.hide();
+$('button[type="submit"]').prop('disabled',false);
+});
+
+$(document).on('click',function(e){
+if(!$(e.target).closest('#gen_no_input,#code_suggestions').length){
+$dropdown.hide();
+}
+});
+
+});
+</script>
+
+{% endblock %}
